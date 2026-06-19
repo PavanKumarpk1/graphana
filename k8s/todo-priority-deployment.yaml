@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-priority-api
+  labels:
+    app: todo-priority-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo-priority-api
+  template:
+    metadata:
+      labels:
+        app: todo-priority-api
+    spec:
+      nodeSelector:
+        workload: todo-secondary # Schedules exclusively on Node Pool 2
+      containers:
+      - name: todo-priority-api
+        image: gcr.io/YOUR_GCP_PROJECT_ID/todo-priority-api:latest
+        ports:
+        - containerPort: 8000
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "250Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-priority-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8000
+    targetPort: 8000
+  selector:
+    app: todo-priority-api

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins-service
+  namespace: jenkins
+spec:
+  type: ClusterIP # Keeps Jenkins private inside the cluster network for security
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: web-ui
+  - port: 50000
+    targetPort: 50000
+    name: build-agent
+  selector:
+    app: jenkins-server

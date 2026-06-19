@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-core-api
+  labels:
+    app: todo-core-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo-core-api
+  template:
+    metadata:
+      labels:
+        app: todo-core-api
+    spec:
+      nodeSelector:
+        workload: todo-core # Schedules exclusively on Node Pool 1
+      containers:
+      - name: todo-core-api
+        image: gcr.io/YOUR_GCP_PROJECT_ID/todo-core-api:latest # Replace with your actual registry path
+        ports:
+        - containerPort: 8000
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "250Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-core-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8000
+    targetPort: 8000
+  selector:
+    app: todo-core-api

@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jenkins
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jenkins-home-pvc
+  namespace: jenkins
+spec:
+  accessModes:
+    - ReadWriteOnce # Means the disk can be mounted as read-write by a single node
+  resources:
+    requests:
+      storage: 20Gi # Adjust size based on how many build logs you plan to keep
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins
+  namespace: jenkins
+  labels:
+    app: jenkins-server
+spec:
+  replicas: 1 # Must be 1 because ReadWriteOnce volumes cannot be shared across multiple replicas
+  strategy:
+    type: Recreate # Kills the old pod before spinning up the new one, releasing the cloud disk safely
+  selector:
+    matchLabels:
+      app: jenkins-server
+  template:
+    metadata:
+      labels:
+        app: jenkins-server
+    spec:
+      nodeSelector:
+        workload: todo-secondary # Targets Node Pool 2 from your Terraform setup
+      securityContext:
+        # Jenkins run as user 1000 inside its official container. 
+        # This ensures the mounted cloud disk has the correct permissions so Jenkins can write to it.
+        fsGroup: 1000 
+      containers:
+      - name: jenkins
+        image: jenkins/jenkins:lts-jdk17
+        ports:
+        - containerPort: 8080
+          name: http-port
+        - containerPort: 50000
+          name: agent-port
+        env:
+        - name: JAVA_OPTS
+          value: "-Djenkins.install.runSetupWizard=true"
+        resources:
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+          requests:
+            cpu: "1"
+            memory: "2Gi"
+        volumeMounts:
+        - name: jenkins-storage
+          mountPath: /var/jenkins_home # This is the critical directory where Jenkins saves everything
+      volumes:
+      - name: jenkins-storage
+        persistentVolumeClaim:
+          claimName: jenkins-home-pvc # Ties the deployment to the persistent disk defined above
