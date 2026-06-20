@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     environment {
-        DOCKER_HUB_USER  = 'paavan24' // Updated with your actual username from the log!
+        DOCKER_HUB_USER  = 'paavan24' 
         DOCKER_CREDS_ID  = 'docker-hub-credentials'
     }
     
@@ -13,31 +13,18 @@ pipeline {
             }
         }
         
-        stage('Build & Push Images via Kaniko') {
+        stage('Build & Push Images') {
             steps {
                 script {
-                    def apps = ['todo-core-api', 'todo-priority-api', 'todo-tags-api']
+                    def apps = ['todo-core-api', 'todo-priority-api', 'todo-tags-api'] 
                     
-                    // Securely grab your Docker Hub config via Jenkins Credentials
                     withCredentials([usernamePassword(credentialsId: "${env.DOCKER_CREDS_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        
-                        // Create a standard Docker config JSON file dynamically for Kaniko authorization
-                        sh """
-                            mkdir -p ~/.docker
-                            AUTH=\$(echo -n "${DOCKER_USER}:${DOCKER_PASS}" | base64)
-                            echo "{\\\"auths\\\":{\\\"https://index.docker.io/v1/\\\":{\\\"auth\\\":\\\"\$AUTH\\\"}}}" > ~/.docker/config.json
-                        """
+                        sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
                         
                         for (app in apps) {
-                            echo "--- Kaniko Building and Pushing: ${app} ---"
-                            
-                            // Spin up Kaniko executor container dynamically to build the microservice
-                            sh """
-                            /kaniko/executor \
-                              --context=dir://\$(pwd)/apps/${app} \
-                              --dockerfile=\$(pwd)/apps/${app}/Dockerfile \
-                              --destination=${env.DOCKER_HUB_USER}/${app}:${BUILD_NUMBER}
-                            """
+                            echo "--- Processing Application: ${app} ---"
+                            sh "docker build -t ${env.DOCKER_HUB_USER}/${app}:${BUILD_NUMBER} ./apps/${app}"
+                            sh "docker push ${env.DOCKER_HUB_USER}/${app}:${BUILD_NUMBER}"
                         }
                     }
                 }
@@ -54,18 +41,8 @@ pipeline {
                     sh "kubectl apply -f ./k8s/todo-core-deployment.yaml"
                     sh "kubectl apply -f ./k8s/todo-priority-deployment.yaml"
                     sh "kubectl apply -f ./k8s/todo-tags-deployment.yaml"
-                    
-                    sh "kubectl rollout status deployment/todo-core-deployment"
-                    sh "kubectl rollout status deployment/todo-priority-deployment"
-                    sh "kubectl rollout status deployment/todo-tags-deployment"
                 }
             }
-        }
-    }
-    
-    post {
-        always {
-            cleanWs()
         }
     }
 }
