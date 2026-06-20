@@ -53,11 +53,11 @@ spec:
           value: "-Djenkins.install.runSetupWizard=true"
         resources:
           limits:
-            cpu: "2"
-            memory: "4Gi"
-          requests:
             cpu: "1"
             memory: "2Gi"
+          requests:
+            cpu: "0.5"
+            memory: "1Gi"
         volumeMounts:
         - name: jenkins-storage
           mountPath: /var/jenkins_home # This is the critical directory where Jenkins saves everything
