@@ -58,6 +58,13 @@ resource "google_container_cluster" "gke" {
     services_secondary_range_name = "k8s-services"
   }
 
+  # Add this block to hide nodes from public IPs
+  private_cluster_config {
+    enable_private_nodes    = true   # <--- Private nodes = 0 public IPs used
+    enable_private_endpoint = false  # Keeps master API public so you can use kubectl locally
+    master_ipv4_cidr_block  = "172.16.0.0/28"
+  }
+
   release_channel {
     channel = "REGULAR"
   }
