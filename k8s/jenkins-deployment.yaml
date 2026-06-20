@@ -10,10 +10,10 @@ metadata:
   namespace: jenkins
 spec:
   accessModes:
-    - ReadWriteOnce # Means the disk can be mounted as read-write by a single node
+    - ReadWriteOnce 
   resources:
     requests:
-      storage: 20Gi # Adjust size based on how many build logs you plan to keep
+      storage: 20Gi 
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -23,9 +23,9 @@ metadata:
   labels:
     app: jenkins-server
 spec:
-  replicas: 1 # Must be 1 because ReadWriteOnce volumes cannot be shared across multiple replicas
+  replicas: 1 
   strategy:
-    type: Recreate # Kills the old pod before spinning up the new one, releasing the cloud disk safely
+    type: Recreate 
   selector:
     matchLabels:
       app: jenkins-server
@@ -35,10 +35,8 @@ spec:
         app: jenkins-server
     spec:
       nodeSelector:
-        workload: todo-secondary # Targets Node Pool 2 from your Terraform setup
+        workload: todo-secondary 
       securityContext:
-        # Jenkins run as user 1000 inside its official container. 
-        # This ensures the mounted cloud disk has the correct permissions so Jenkins can write to it.
         fsGroup: 1000 
       containers:
       - name: jenkins
@@ -60,8 +58,13 @@ spec:
             memory: "1Gi"
         volumeMounts:
         - name: jenkins-storage
-          mountPath: /var/jenkins_home # This is the critical directory where Jenkins saves everything
+          mountPath: /var/jenkins_home 
+        - name: docker-sock               # Cleanly grouped under a single volumeMounts block
+          mountPath: /var/run/docker.sock
       volumes:
       - name: jenkins-storage
         persistentVolumeClaim:
-          claimName: jenkins-home-pvc # Ties the deployment to the persistent disk defined above
+          claimName: jenkins-home-pvc 
+      - name: docker-sock                 # Added the host block mapping to the GKE node's Docker socket
+        hostPath:
+          path: /var/run/docker.sock
