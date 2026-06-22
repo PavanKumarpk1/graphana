@@ -34,13 +34,14 @@ spec:
       labels:
         app: jenkins-server
     spec:
-      nodeSelector:
-        workload: todo-secondary 
       securityContext:
         fsGroup: 1000 
       containers:
       - name: jenkins
-        image: jenkins/jenkins:lts-jdk17
+        # 1. Switched to the absolute standard official stable image
+        image: jenkins/jenkins:lts
+        securityContext:
+          runAsUser: 0  # 2. Runs as root so it has permissions to talk to the docker socket
         ports:
         - containerPort: 8080
           name: http-port
@@ -51,20 +52,20 @@ spec:
           value: "-Djenkins.install.runSetupWizard=true"
         resources:
           limits:
-            cpu: "1"
-            memory: "2Gi"
-          requests:
-            cpu: "0.5"
+            cpu: "500m"
             memory: "1Gi"
+          requests:
+            cpu: "100m"
+            memory: "512Mi"
         volumeMounts:
         - name: jenkins-storage
           mountPath: /var/jenkins_home 
-        - name: docker-sock               # Cleanly grouped under a single volumeMounts block
-          mountPath: /var/run/docker.sock
+        - name: docker-sock
+          mountPath: /var/run/docker.sock 
       volumes:
       - name: jenkins-storage
         persistentVolumeClaim:
-          claimName: jenkins-home-pvc 
-      - name: docker-sock                 # Added the host block mapping to the GKE node's Docker socket
+          claimName: jenkins-home-pvc
+      - name: docker-sock
         hostPath:
           path: /var/run/docker.sock

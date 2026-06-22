@@ -14,8 +14,7 @@ spec:
       labels:
         app: todo-tags-api
     spec:
-      nodeSelector:
-        nodeName: gke-todo-microservic-todo-secondary-p-801ea2db-rpvs # Schedules exclusively on Node Pool 2
+       # Schedules exclusively on Node Pool 2
       containers:
       - name: todo-tags-api
         image: gcr.io/YOUR_GCP_PROJECT_ID/todo-tags-api:latest
