@@ -14,8 +14,9 @@ spec:
       labels:
         app: todo-core-api
     spec:
-      nodeSelector:
-        workload: todo-core # Schedules exclusively on Node Pool 1
+      #nodeSelector:
+      #  workload: todo-core # Schedules exclusively on Node Pool 1
+      nodeName: gke-todo-microservic-todo-secondary-p-50848fad-qm83
       containers:
       - name: todo-core-api
         image: gcr.io/YOUR_GCP_PROJECT_ID/todo-core-api:latest # Replace with your actual registry path
